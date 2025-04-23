@@ -37,6 +37,7 @@ const Index = ({
   return (
     <div className="md:flex justify-between bg-white w-full text-xs">
       <div className="flex">
+        {/* update control canvas size */}
         <CanvasWidth
           widthSize={widthSize}
           heightSize={heightSize}
@@ -44,8 +45,11 @@ const Index = ({
           setHeightSize={setHeightSize}
           border={border}
         />
+        {/* update control canvas quantity */}
         <CanvasQuantity quantity={quantity} setQuantity={setQuantity} />
       </div>
+
+      {/* update control canvas border size */}
       {canvasShape !== 'circle' && (
         <div className="flex justify-between md:p-5 w-4/5">
           <CanvasBorder
@@ -64,24 +68,28 @@ const Index = ({
       )}
 
       <div className="flex">
+        {/* update control canvas background color */}
         <CanvasBgColor
           canvasColor={canvasColor}
           setCanvasColor={setCanvasColor}
           isColorOpen={isColorOpen}
           setIsColorOpen={setIsColorOpen}
         />
+        {/* update control canvas shape */}
         <CanvasShape
           canvasShape={canvasShape}
           setCanvasShape={setCanvasShape}
           isShapeOpen={isShapeOpen}
           setIsShapeOpen={setIsShapeOpen}
         />
+        {/* update control canvas material */}
         <CanvasMaterial
           canvasMaterial={canvasMaterial}
           setCanvasMaterial={setCanvasMaterial}
           isMaterialOpen={isMaterialOpen}
           setIsMaterialOpen={setIsMaterialOpen}
         />
+        {/* download control canvas */}
         <CanvasDownload
           downloadCanvasImage={downloadCanvasImage}
           isDownloadOpen={isDownloadOpen}

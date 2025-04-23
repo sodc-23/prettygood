@@ -4,69 +4,74 @@ import { jsPDF } from 'jspdf';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import UploadModal from './upload_modal';
-import EditTool from './edit_tool/index';
-import { removeBackground } from './func/removeBackground';
-import { detectFace } from './func/detectFace';
-import { Checkerboard } from './patterns/checkerboard';
+import UploadModal from './upload_modal'; // upload modal component
+import EditTool from './edit_tool/index'; // control canvas tool component
+import { removeBackground } from './func/removeBackground'; // function for removalBackground
+import { detectFace } from './func/detectFace'; // function for face cut
+import { Checkerboard } from './patterns/checkerboard'; // transparent background component
 import {
   loadFabricImage,
   goldChromeGradient,
   chromeSilverGradient,
   rainbowGradient,
-} from './func/fabricFeature';
+} from './func/fabricFeature'; // material background gradient
 
 const Index = () => {
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-  const canvasRef = useRef(null);
-  const fabricCanvas = useRef(null);
+  const canvasRef = useRef(null); // entire canvas element
+  const fabricCanvas = useRef(null); // entire canvas
 
-  const fabricImage = useRef(null);
-  const fabricRect = useRef(null);
-  const fabricCircle = useRef(null);
-  const fabricMask = useRef(null);
+  const fabricImage = useRef(null); // uploaded image
+  const fabricRect = useRef(null); // rectangle object for control canvas back|clip
+  const fabricCircle = useRef(null); // circle object for control canvas back|clip
+  const fabricMask = useRef(null); // material object
 
-  const dropdownRef = useRef(null);
+  const dropdownRef = useRef(null); // download image element
 
-  const [isModalOpen, setIsModalOpen] = useState(true);
-  const [fileUrl, setFileUrl] = useState(null);
-  const [widthSize, setWidthSize] = useState(250);
-  const [heightSize, setHeightSize] = useState(250);
-  const [quantity, setQuantity] = useState(10);
-  const [border, setBorder] = useState(10);
-  const [canvasColor, setCanvasColor] = useState('#fff');
-  const [canvasShape, setCanvasShape] = useState('rect');
-  const [canvasRound, setCanvasRound] = useState(16);
-  const [canvasMaterial, setCanvasMaterial] = useState('premium');
-  const [loading, setLoading] = useState(false);
-  const [mark1Left, setMark1Left] = useState(0);
-  const [mark1Top, setMark1Top] = useState(0);
-  const [mark2Left, setMark2Left] = useState(0);
-  const [mark2Top, setMark2Top] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(true); // upload image modal open/close
+  const [fileUrl, setFileUrl] = useState(null); // upload image url
+  const [widthSize, setWidthSize] = useState(250); // width of canvas to control
+  const [heightSize, setHeightSize] = useState(250); // height of canvas to control
+  const [quantity, setQuantity] = useState(10); // image quantity
+  const [border, setBorder] = useState(10); // control canvas border
+  const [canvasColor, setCanvasColor] = useState('#fff'); // control canvas color
+  const [canvasShape, setCanvasShape] = useState('rect'); // control canvas background shape
+  const [canvasRound, setCanvasRound] = useState(16); // control canvas background round
+  const [canvasMaterial, setCanvasMaterial] = useState('premium'); // control canvas material
+  const [loading, setLoading] = useState(false); // loading when backgroundRemoval or faceCutting
+  const [mark1Left, setMark1Left] = useState(0); // position left of mark showing control canvas width
+  const [mark1Top, setMark1Top] = useState(0); // position top of mark showing control canvas width
+  const [mark2Left, setMark2Left] = useState(0); // position left of mark showing control canvas height
+  const [mark2Top, setMark2Top] = useState(0); // position top of mark showing control canvas height
 
   const [fullWidth, setFullWidth] = useState(
     document.documentElement.clientWidth - 20
-  );
+  ); // width of entire canvas
   const [fullHeight, setFullHeight] = useState(
     isMobile
       ? document.documentElement.clientHeight - 260
       : document.documentElement.clientHeight - 120
-  );
-  const [isOpen, setIsOpen] = useState(false);
-  const [isColorOpen, setIsColorOpen] = useState(false);
-  const [isShapeOpen, setIsShapeOpen] = useState(false);
-  const [isMaterialOpen, setIsMaterialOpen] = useState(false);
-  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+  ); // height of entire canvas
+  const [isOpen, setIsOpen] = useState(false); // open|close of dropdown for backgroundRemoval
+  const [isColorOpen, setIsColorOpen] = useState(false); // open|close of dropdown for control canvas color
+  const [isShapeOpen, setIsShapeOpen] = useState(false); // open|close of dropdown for control canvas shape
+  const [isMaterialOpen, setIsMaterialOpen] = useState(false); // open|close for dropdown control canvas material
+  const [isDownloadOpen, setIsDownloadOpen] = useState(false); // open|close of dropdown for download
 
-  function handleClickOutside(event) {
+  // close backgroundRemoval dropdown
+  const handleClickOutside = (event) => {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
       setIsOpen(false);
     }
-  }
+  };
+
   useEffect(() => {
+    // close backgroundRemoval dropdown when clicking rest part.
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('touchend', handleClickOutside);
+
+    // Width and height for entire canvas during resizing browser
     window.addEventListener('resize', () => {
       setFullWidth(document.documentElement.clientWidth - 20);
       setFullHeight(
@@ -90,11 +95,14 @@ const Index = () => {
     };
   }, []);
 
+  // render canvas depending on border, canvasMaterial, canvasShape, fullHeight,  fullWidth, canvasColor, canvasRound, widthSize, heightSize
   const renderCanvas = useCallback(
     async (url) => {
       if (!url && !fabricImage.current) {
         return;
       }
+
+      // create entire canvas init
       if (!fabricCanvas.current) {
         fabricCanvas.current = new fabric.Canvas(canvasRef.current, {
           backgroundColor: '#f3f4f4',
@@ -106,6 +114,7 @@ const Index = () => {
 
       fabricCanvas.current.clear();
 
+      // create image fabric object
       if (!fabricImage.current) {
         fabricImage.current = await loadFabricImage(url);
         fabricImage.current.set({
@@ -119,6 +128,7 @@ const Index = () => {
         });
       }
 
+      // create Rectangle for control canvas background and clipPath when control canvas shape is rectangle, die cut, rounded
       if (!fabricRect.current) {
         fabricRect.current = new fabric.Rect({
           left: fullWidth / 2,
@@ -140,6 +150,8 @@ const Index = () => {
           height: heightSize + 2 * border,
         });
       }
+
+      // create Circle for control canvas background and clipPath when control canvas shape is circle
       if (!fabricCircle.current) {
         fabricCircle.current = new fabric.Ellipse({
           left: fullWidth / 2,
@@ -160,6 +172,7 @@ const Index = () => {
         });
       }
 
+      // define material background gradient depending on material
       let maskFillColor = canvasColor;
       switch (canvasMaterial) {
         case 'gold-chrome':
@@ -175,9 +188,11 @@ const Index = () => {
           maskFillColor = canvasColor;
           break;
       }
-      let canvasBack;
-      let canvasBackGroup;
 
+      let canvasBack; // control canvas background
+      let canvasBackGroup; // control canvas background with material
+
+      // define control canvas back & canvas clip depending on canvas shape
       if (canvasShape === 'circle') {
         canvasBack = new fabric.Ellipse({
           left: fabricCircle.current
@@ -212,6 +227,8 @@ const Index = () => {
           angle: fabricRect.current ? fabricRect.current.angle : 0,
         });
       }
+
+      // define position of marks showing control canvas width and height
       setMark1Left(canvasBack.left);
       setMark1Top(
         canvasBack.top - (canvasBack.height * canvasBack.scaleY) / 2 - 40
@@ -221,6 +238,7 @@ const Index = () => {
       );
       setMark2Top(canvasBack.top);
 
+      //define control canvas background with material depending on material kinds
       if (canvasMaterial === 'transparent') {
         fabricMask.current = await loadFabricImage(
           Checkerboard(
@@ -257,7 +275,7 @@ const Index = () => {
         originY: 'center',
       });
 
-      //canas shape update
+      // update image|background clip depending on canvas shape
       if (canvasShape === 'circle') {
         fabricImage.current.set({ clipPath: fabricCircle.current });
         canvasBackGroup.set({ clipPath: fabricCircle.current });
@@ -284,8 +302,8 @@ const Index = () => {
           originY: 'center',
           strokeWidth: 0,
           fill: canvasColor,
-        });
-
+        }); // die cut background
+        //clone image for cutting background same as uploaded image shape
         const clonedImage = new fabric.util.object.clone(fabricImage.current);
         const scaleX =
           (fabricRect.current.width * fabricRect.current.scaleX) /
@@ -310,6 +328,8 @@ const Index = () => {
         });
 
         canvasBack = group;
+
+        // redefine canvas material because canvas back is different from the usual
         if (canvasMaterial === 'transparent') {
           fabricMask.current = await loadFabricImage(
             Checkerboard(
@@ -356,6 +376,7 @@ const Index = () => {
         });
         fabricImage.current.set({ clipPath: fabricRect.current });
       } else {
+        // update border rounded of control canvas
         if (canvasShape === 'rounded') {
           fabricRect.current.set({
             rx: canvasRound,
@@ -368,8 +389,10 @@ const Index = () => {
         canvasBackGroup.set({ clipPath: fabricRect.current });
       }
 
+      // insert control canvas into lowest layer
       fabricCanvas.current.insertAt(canvasBackGroup, 0);
 
+      // updating canvas back|clip position and scale by manual control
       canvasBackGroup.on('modified', () => {
         if (canvasShape === 'circle') {
           fabricCircle.current.set({
@@ -429,6 +452,7 @@ const Index = () => {
     ]
   );
 
+  // trigger renderCanvas when updating image file, canvas border, round, color, material, width, height
   useEffect(() => {
     if (
       fileUrl &&
@@ -452,6 +476,7 @@ const Index = () => {
     heightSize,
   ]);
 
+  // trigger renderCanvas function when updating canvas shape and resizing browser
   useEffect(() => {
     if (fabricImage.current && fabricRect.current && fabricCircle.current) {
       if (canvasShape === 'circle') {
@@ -477,29 +502,37 @@ const Index = () => {
     }
   }, [canvasShape, fullWidth, fullHeight]);
 
+  // download image
   const downloadCanvasImage = useCallback(
     (param) => {
+      // canvas size to download
       const canvas = new fabric.Canvas('canvas', {
         width: Math.round(widthSize) + 2 * Math.round(border),
         height: Math.round(heightSize) + 2 * Math.round(border),
         backgroundColor: null,
       });
+
+      // move control canvas into center of screen for correct download
       fabricRect.current.set({ left: fullWidth / 2, top: fullHeight / 2 });
       fabricCircle.current.set({ left: fullWidth / 2, top: fullHeight / 2 });
       fabricImage.current.set({ left: fullWidth / 2, top: fullHeight / 2 });
       renderCanvas();
 
+      // remove background when material is transparent
       if (canvasMaterial === 'transparent') {
         fabricCanvas.current.clear();
         fabricCanvas.current.add(fabricImage.current);
         fabricCanvas.current.renderAll();
       }
 
+      // image url of entire canvas with image
       const originalDataUrl = fabricCanvas.current.toDataURL({
         format: 'png',
       });
 
+      // read entire canvas
       fabric.Image.fromURL(originalDataUrl, (img) => {
+        // clip entire canvas image to download
         img.set({
           left: Math.round(widthSize / 2) + Math.round(border),
           top: Math.round(heightSize / 2) + Math.round(border),
@@ -508,16 +541,20 @@ const Index = () => {
         });
         canvas.add(img);
         canvas.renderAll();
+
+        // download canvas image url (same size as control canvas)
         const dataUrl = canvas.toDataURL({
           format: 'png',
         });
 
         if (param === 'png') {
+          // png download
           const link = document.createElement('a');
           link.href = dataUrl;
           link.download = `${new Date().getTime()}.png`;
           link.click();
         } else if (param === 'pdf') {
+          // pdf download
           const margin = 10;
           const pdf = new jsPDF();
 
@@ -537,6 +574,7 @@ const Index = () => {
           );
           pdf.save(`${new Date().getTime()}.pdf`);
         } else {
+          // eps download
           const svgData = canvas.toSVG();
 
           const blob = new Blob([svgData], { type: 'application/postscript' });
@@ -554,14 +592,18 @@ const Index = () => {
     [canvasMaterial, border, canvasShape, widthSize, fileUrl, canvasColor]
   );
 
+  // removalBackground
   const removalBackground = useCallback(async () => {
     setLoading(true);
+
+    // define canvas to remove background
     const canvas = new fabric.Canvas('canvas', {
       width: Math.round(widthSize) + 2 * Math.round(border),
       height: Math.round(heightSize) + 2 * Math.round(border),
       backgroundColor: null,
     });
 
+    // move control canvas into center without canvas back for correct handle
     fabricCanvas.current.clear();
     fabricRect.current.set({ left: fullWidth / 2, top: fullHeight / 2 });
     fabricCircle.current.set({ left: fullWidth / 2, top: fullHeight / 2 });
@@ -569,11 +611,15 @@ const Index = () => {
 
     fabricCanvas.current.add(fabricImage.current);
     fabricCanvas.current.renderAll();
+
+    // entire canvas image url
     const originalDataUrl = fabricCanvas.current.toDataURL({
       format: 'png',
     });
 
+    // read entire canvas
     fabric.Image.fromURL(originalDataUrl, async (img) => {
+      // redefine canvas to removeBackground depending on control canvas shape
       if (canvasShape === 'circle') {
         canvas.setWidth(
           fabricCircle.current.width * fabricCircle.current.scaleX
@@ -593,12 +639,17 @@ const Index = () => {
       });
       canvas.add(img);
       canvas.renderAll();
+
+      // removalBackground canvas image url
       const dataUrl = canvas.toDataURL({
         format: 'png',
       });
 
+      // remove background
       const cleanImageUrl = await removeBackground(dataUrl);
       setLoading(false);
+
+      // display canvas after removalBackground
       try {
         const updatedImg = await loadFabricImage(cleanImageUrl);
         updatedImg.set({
@@ -632,6 +683,7 @@ const Index = () => {
     });
   }, [border, canvasShape, widthSize, fullWidth, fullHeight]);
 
+  // reset original image
   const originalImage = useCallback(() => {
     if (fileUrl) {
       setWidthSize(250);
@@ -653,13 +705,17 @@ const Index = () => {
     }
   }, [fileUrl]);
 
+  // face cut handle
   const cutFace = useCallback(async () => {
     if (fabricCanvas.current && fabricImage.current) {
       setLoading(true);
 
+      // remove control canvas back for correct cut face
       fabricCanvas.current.clear();
       fabricCanvas.current.add(fabricImage.current);
       fabricCanvas.current.renderAll();
+
+      // entire canvas image url without back
       const originalDataUrl = fabricCanvas.current.toDataURL({
         format: 'png',
       });
@@ -667,9 +723,10 @@ const Index = () => {
       const image = new Image();
 
       image.onload = async () => {
-        const detections = await detectFace(image);
+        const detections = await detectFace(image); // detect face from image
         setLoading(false);
 
+        // error handle unless detect face
         if (
           !detections ||
           !Array.isArray(detections) ||
@@ -688,9 +745,11 @@ const Index = () => {
           }
         }
 
+        // when detect faces
         detections.forEach((detection) => {
           const box = detection.detection.box;
 
+          // image size after control
           const scaledWidth =
             fabricImage.current.width * fabricImage.current.scaleX;
           const scaledHeight =
@@ -704,6 +763,8 @@ const Index = () => {
           const width = box.width / fabricImage.current.scaleX;
           const height = box.height / fabricImage.current.scaleY;
           const maxValue = Math.max(width, height);
+
+          // crop image using deteting face points
           const cropped = new fabric.Image(fabricImage.current.getElement(), {
             left: fullWidth / 2,
             top: fullHeight / 2,
@@ -722,6 +783,7 @@ const Index = () => {
 
           fabricImage.current = cropped;
 
+          // display face-cut image on canvas
           if (canvasShape === 'die') {
             if (fileUrl) {
               fabricImage.current.set({
@@ -739,6 +801,7 @@ const Index = () => {
     }
   }, [fullHeight, fullWidth, canvasShape, fileUrl]);
 
+  // move image into center horizotal of control canvas
   const centerHorizontal = useCallback(() => {
     let left = fullWidth / 2;
     if (canvasShape === 'circle' && fabricCircle.current) {
@@ -751,6 +814,7 @@ const Index = () => {
     fabricCanvas.current.renderAll();
   }, [fullWidth, canvasShape]);
 
+  // move image into center vertical of control canvas
   const centerVertical = useCallback(() => {
     let top = fullHeight / 2;
     if (canvasShape === 'circle' && fabricCircle.current) {
@@ -763,6 +827,7 @@ const Index = () => {
     fabricCanvas.current.renderAll();
   }, [fullHeight, canvasShape]);
 
+  // 1:1 match image size into control canvas
   const matchingSize = useCallback(() => {
     let scaleX, scaleY;
     if (canvasShape === 'circle') {
@@ -784,16 +849,19 @@ const Index = () => {
     fabricCanvas.current.renderAll();
   }, [canvasShape]);
 
+  // mirror image through x axis
   const flipX = useCallback(() => {
     fabricImage.current.set('flipX', !fabricImage.current.flipX);
     fabricCanvas.current.renderAll();
   }, []);
 
+  // mirror image through y axis
   const flipY = useCallback(() => {
     fabricImage.current.set('flipY', !fabricImage.current.flipY);
     fabricCanvas.current.renderAll();
   }, []);
 
+  // rerotate image to zero degree
   const resetRotate = useCallback(() => {
     fabricImage.current.set('angle', 0);
     fabricCanvas.current.renderAll();
@@ -809,7 +877,9 @@ const Index = () => {
           </div>
         )}
 
+        {/* canvas */}
         <div className="flex justify-center w-full relative text-green-400 font-bold mb-4">
+          {/* postion of marks showing control canvas */}
           {fileUrl && (
             <>
               <p
@@ -832,15 +902,19 @@ const Index = () => {
               </p>
             </>
           )}
+
+          {/* entire canvas */}
           <canvas ref={canvasRef} />
         </div>
 
+        {/* upload image file */}
         <UploadModal
           isOpen={isModalOpen}
           setFileUrl={setFileUrl}
           setHeightSize={setHeightSize}
         />
 
+        {/* image tools */}
         <div className="fixed left-0 bottom-0 w-full h-[260px] md:h-[120px] bg-white">
           <div className="md:flex mx-4">
             <div className="flex">
@@ -929,6 +1003,8 @@ const Index = () => {
                 />
               </div>
             </div>
+
+            {/* removalBackground | face cut | origin image */}
             <div className="p-1">
               <button
                 className="text-white bg-blue-500 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-xs px-5 py-2.5 text-center me-2"
@@ -975,6 +1051,8 @@ const Index = () => {
               )}
             </div>
           </div>
+
+          {/* control canvas tools */}
           <EditTool
             widthSize={widthSize}
             heightSize={heightSize}

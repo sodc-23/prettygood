@@ -1,5 +1,6 @@
 import { fabric } from 'fabric';
 
+// load image from url
 export const loadFabricImage = (url) => {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -16,6 +17,7 @@ export const loadFabricImage = (url) => {
   });
 };
 
+// gradient when material is gold-chrome
 export const goldChromeGradient = (item) => {
   return new fabric.Gradient({
     type: 'linear',
@@ -33,6 +35,7 @@ export const goldChromeGradient = (item) => {
   });
 };
 
+// gradient when material is chrome-silver
 export const chromeSilverGradient = (item) => {
   return new fabric.Gradient({
     type: 'linear',
@@ -50,6 +53,7 @@ export const chromeSilverGradient = (item) => {
   });
 };
 
+// gradient when material is rainbow holographic
 export const rainbowGradient = (item) => {
   return new fabric.Gradient({
     type: 'linear',

@@ -1,5 +1,6 @@
 import * as faceapi from 'face-api.js';
 
+// import json data for detecting face from image
 const loadModels = async () => {
   await faceapi.nets.tinyFaceDetector.loadFromUri('/models/tiny_face_detector');
   await faceapi.nets.ssdMobilenetv1.loadFromUri('/models/ssd_mobilenetv1');
@@ -12,6 +13,8 @@ const loadModels = async () => {
     '/models/tiny_yolov2_separable_conv'
   );
 };
+
+// detect face from image
 export const detectFace = async (imageElement) => {
   await loadModels();
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);

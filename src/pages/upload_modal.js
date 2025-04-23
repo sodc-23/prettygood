@@ -1,3 +1,4 @@
+// Image upload
 import React from 'react';
 
 const UploadModal = ({ isOpen, setFileUrl, setHeightSize }) => {
